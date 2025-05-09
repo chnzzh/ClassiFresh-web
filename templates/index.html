@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>肉类新鲜度分类器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .upload-container {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        .image-preview {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result-item {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .progress {
+            height: 100%;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            flex: 1;
+            min-width: 200px;
+        }
+        .camera-btn {
+            background-color: #2196F3;
+        }
+        button:hover {
+            filter: brightness(0.9);
+        }
+        #fileInput {
+            display: none;
+        }
+        .final-result {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 修改原有结果项样式 */
+        .result-container h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .upload-container {
+                padding: 10px;
+            }
+            button {
+                width: 100%;
+                min-width: unset;
+                padding: 15px;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center">肉类新鲜度分类器</h1>
+
+    <div class="upload-container">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            <input type="file" name="file" id="fileInput" accept="image/*" required>
+
+            <div class="button-group">
+                <!-- 拍照按钮 -->
+                <button type="button" class="camera-btn" onclick="handleCamera()">拍照上传</button>
+
+                <!-- 文件上传按钮 -->
+                <button type="button" onclick="handleFileSelect()">选择文件</button>
+            </div>
+
+            <!-- <button type="submit" style="margin-top:15px;">提交分析</button> -->
+        </form>
+    </div>
+
+    {% if filename %}
+    <div class="result-container">
+        <h2>分类结果</h2>
+
+        <div class="final-result">
+            <div>
+                <div style="font-size: 0.8em;opacity: 0.9;">最终判定结果</div>
+                <div style="font-size: 1.4em;font-weight: bold;">{{ results[0].label }}</div>
+            </div>
+        </div>
+
+        <img src="{{ url_for('static', filename='uploads/' + filename) }}" class="image-preview">
+
+        <h3>Top-3 预测结果:</h3>
+        {% for result in results %}
+        <div class="result-item">
+            <strong>{{ result.label }}</strong>
+            <div>{{ result.probability }}</div>
+            <div class="progress-bar">
+                <div class="progress" style="width: {{ result.probability }}"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <script>
+        // 处理拍照功能
+        function handleCamera() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.setAttribute('capture', 'environment');
+            fileInput.click();
+        }
+
+        // 处理文件选择
+        function handleFileSelect() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.removeAttribute('capture');
+            fileInput.click();
+        }
+
+        // 自动提交表单
+        document.getElementById('fileInput').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                // 这里可以添加图片预览逻辑
+                document.getElementById('uploadForm').submit();
+            }
+        });
+
+        // 移动端特性检测
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+    </script>
+</body>
+</html>
