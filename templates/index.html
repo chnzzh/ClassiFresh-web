@@ -1,23 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>肉类新鲜度分类器</title>
+    <title>Meat Freshness Classifier</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             min-height: 100vh;
+            background-color: #f9f9f9;
         }
+        
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        h1 {
+            text-align: center;
+        }
+        
+        .language-toggle {
+            display: flex;
+            gap: 2px;
+            background-color: #e0e0e0;
+            padding: 2px;
+            border-radius: 10px;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        .lang-btn {
+            background-color: transparent;
+            border: none;
+            padding: 3px 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-width: auto;
+            font-size: 0.8em;
+        }
+        
+        .lang-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .lang-btn:not(.active) {
+            color: #666;
+        }
+        
         .upload-container {
             border: 2px dashed #ccc;
             padding: 15px;
             text-align: center;
             margin-bottom: 20px;
             border-radius: 10px;
+            background-color: white;
         }
         .result-container {
             margin-top: 20px;
@@ -28,13 +81,15 @@
             object-fit: cover;
             margin: 20px 0;
             border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .result-item {
             margin: 10px 0;
             padding: 15px;
-            background-color: #f5f5f5;
+            background-color: white;
             border-radius: 8px;
             font-size: 0.9em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .progress-bar {
             height: 20px;
@@ -87,22 +142,55 @@
             gap: 15px;
             animation: fadeIn 0.5s ease-in;
         }
+        
+        .info-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .info-value {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 修改原有结果项样式 */
-        .result-container h2 {
+        .result-container h2,
+        .result-container h3 {
             color: #333;
             border-bottom: 2px solid #4CAF50;
             padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         @media (max-width: 600px) {
             body {
                 padding: 10px;
             }
+            
+            .header {
+                flex-direction: column;
+            }
+            
             .upload-container {
                 padding: 10px;
             }
@@ -115,10 +203,27 @@
                 flex-direction: column;
             }
         }
+        
+        .text {
+            display: none;
+        }
+        
+        .text.active {
+            display: inline;
+        }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center">肉类新鲜度分类器</h1>
+    <div class="header">
+        <h1>
+            <span class="text" data-lang="zh">肉类新鲜度分类器</span>
+            <span class="text active" data-lang="en">Meat Freshness Classifier</span>
+        </h1>
+        <div class="language-toggle">
+            <button class="lang-btn" data-lang="zh">中</button>
+            <button class="lang-btn active" data-lang="en">EN</button>
+        </div>
+    </div>
 
     <div class="upload-container">
         <form method="post" enctype="multipart/form-data" id="uploadForm">
@@ -126,33 +231,70 @@
 
             <div class="button-group">
                 <!-- 拍照按钮 -->
-                <button type="button" class="camera-btn" onclick="handleCamera()">拍照上传</button>
+                <button type="button" class="camera-btn" onclick="handleCamera()">
+                    <span class="text" data-lang="zh">拍照上传</span>
+                    <span class="text active" data-lang="en">Take Photo</span>
+                </button>
 
                 <!-- 文件上传按钮 -->
-                <button type="button" onclick="handleFileSelect()">选择文件</button>
+                <button type="button" onclick="handleFileSelect()">
+                    <span class="text" data-lang="zh">选择文件</span>
+                    <span class="text active" data-lang="en">Select File</span>
+                </button>
             </div>
-
-            <!-- <button type="submit" style="margin-top:15px;">提交分析</button> -->
         </form>
     </div>
 
     {% if filename %}
     <div class="result-container">
-        <h2>分类结果</h2>
+        <h2>
+            <span class="text" data-lang="zh">分类结果</span>
+            <span class="text active" data-lang="en">Classification Result</span>
+        </h2>
 
         <div class="final-result">
             <div>
-                <div style="font-size: 0.8em;opacity: 0.9;">最终判定结果</div>
-                <div style="font-size: 1.4em;font-weight: bold;">{{ results[0].label }}</div>
+                <div style="font-size: 0.8em;opacity: 0.9;">
+                    <span class="text" data-lang="zh">最终判定结果</span>
+                    <span class="text active" data-lang="en">Final Result</span>
+                </div>
+                <div style="font-size: 1.4em;font-weight: bold;">
+                    <span class="text" data-lang="zh">{{ results[0].label_zh }}</span>
+                    <span class="text active" data-lang="en">{{ results[0].label_en }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 推理信息展示 -->
+        <div class="info-section">
+            <div class="info-item">
+                <span class="info-label">
+                    <span class="text" data-lang="zh">推理时长</span>
+                    <span class="text active" data-lang="en">Inference Time</span>
+                </span>
+                <span class="info-value">{{ inference_time }} ms</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">
+                    <span class="text" data-lang="zh">推理设备</span>
+                    <span class="text active" data-lang="en">Device</span>
+                </span>
+                <span class="info-value">{{ device_info }}</span>
             </div>
         </div>
 
         <img src="{{ url_for('static', filename='uploads/' + filename) }}" class="image-preview">
 
-        <h3>Top-3 预测结果:</h3>
+        <h3>
+            <span class="text" data-lang="zh">Top-3 预测结果</span>
+            <span class="text active" data-lang="en">Top-3 Predictions</span>
+        </h3>
         {% for result in results %}
         <div class="result-item">
-            <strong>{{ result.label }}</strong>
+            <strong>
+                <span class="text" data-lang="zh">{{ result.label_zh }}</span>
+                <span class="text active" data-lang="en">{{ result.label_en }}</span>
+            </strong>
             <div>{{ result.probability }}</div>
             <div class="progress-bar">
                 <div class="progress" style="width: {{ result.probability }}"></div>
@@ -163,6 +305,45 @@
     {% endif %}
 
     <script>
+        // 获取当前语言
+        let currentLanguage = 'zh';
+        
+        // 语言切换功能
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const lang = this.getAttribute('data-lang');
+                setLanguage(lang);
+            });
+        });
+        
+        // 设置语言
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-lang="${lang}"].lang-btn`).classList.add('active');
+            
+            // 更新文本显示
+            document.querySelectorAll('.text').forEach(el => {
+                el.classList.remove('active');
+                if (el.getAttribute('data-lang') === lang) {
+                    el.classList.add('active');
+                }
+            });
+            
+            // 保存语言选择到localStorage
+            localStorage.setItem('preferredLanguage', lang);
+        }
+        
+        // 页面加载时恢复语言设置
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem('preferredLanguage') || 'en';
+            setLanguage(savedLang);
+        });
+
         // 处理拍照功能
         function handleCamera() {
             const fileInput = document.getElementById('fileInput');
@@ -180,7 +361,6 @@
         // 自动提交表单
         document.getElementById('fileInput').addEventListener('change', function() {
             if (this.files && this.files[0]) {
-                // 这里可以添加图片预览逻辑
                 document.getElementById('uploadForm').submit();
             }
         });
