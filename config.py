@@ -7,6 +7,6 @@ class Config:
     MAX_UPLOAD_FOLDER_SIZE = 100 * 1024 * 1024  # 上传文件夹限制
     MODEL_IDLE_TIME = 0  # 模型空闲卸载时间（秒）
     
-    MODEL_PATH = 'models/best_model_resnet50.pth'
+    MODEL_PATH = 'models/final_model_resnet50.pth'
     PORT = 8000
     

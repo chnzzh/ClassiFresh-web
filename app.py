@@ -37,20 +37,29 @@ model = None
 model_lock = threading.Lock()
 unload_timer = None
 
-
-# 加载模型
 def load_model():
     logger.info("Starting to load model...")
     # 构建模型结构
     model = resnet50(weights=None)
-    num_classes = 3  # 根据你的训练代码设置
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    num_classes = 3
+    
+    num_features = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Linear(num_features, 256),
+        nn.BatchNorm1d(256),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(256, num_classes)
+    )
 
     # 加载训练好的权重
     model_path = app.config['MODEL_PATH']
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Loading model from {model_path} on device {device}")
+    
+    # 添加 map_location 确保跨设备加载兼容性
     model.load_state_dict(torch.load(model_path, map_location=device))
+    
     model.eval()
     logger.info("Model loaded successfully")
     return model
@@ -123,7 +132,7 @@ transform = transforms.Compose([
 # 类别标签 (中英双语)
 class_labels = {
     "zh": ["新鲜", "次新鲜", "腐败"],
-    "en": ["Fresh", "Semi-fresh", "Rotten"]
+    "en": ["Fresh", "Less fresh", "Spoiled"]
 }
 
 # 获取设备信息
@@ -140,6 +149,16 @@ def get_device_info():
                 return f"CPU: {cpu_model}"
             except:
                 return f"CPU: {platform.processor()}"
+        elif platform.system() == 'Linux':  # Linux
+            try:
+                with open('/proc/cpuinfo', 'r') as f:
+                    for line in f:
+                        if 'model name' in line:
+                            cpu_model = line.split(':')[1].strip()
+                            return f"CPU: {cpu_model}"
+            except:
+                pass
+            return f"CPU: {platform.processor()}"
         else:
             return f"CPU: {platform.processor()}"
 

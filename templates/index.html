@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meat Freshness Classifier</title>
+    <title>Stewed Beef Freshness Classifier</title>
     <style>
         * {
             margin: 0;
@@ -20,12 +20,15 @@
             background-color: #f9f9f9;
         }
         
-        .header {
+        .lang-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .header {
+            text-align: center;
             margin-bottom: 30px;
-            position: relative;
         }
         
         h1 {
@@ -38,9 +41,6 @@
             background-color: #e0e0e0;
             padding: 2px;
             border-radius: 10px;
-            position: absolute;
-            right: 0;
-            top: 0;
         }
         
         .lang-btn {
@@ -157,16 +157,21 @@
             justify-content: space-between;
             margin: 8px 0;
             font-size: 0.95em;
+            gap: 10px;
         }
         
         .info-label {
             font-weight: bold;
             color: #333;
+            flex-shrink: 0;
         }
         
         .info-value {
             color: #2196F3;
             font-weight: bold;
+            word-break: break-word;
+            text-align: right;
+            flex: 1;
         }
         
         @keyframes fadeIn {
@@ -185,10 +190,6 @@
         @media (max-width: 600px) {
             body {
                 padding: 10px;
-            }
-            
-            .header {
-                flex-direction: column;
             }
             
             .upload-container {
@@ -214,15 +215,18 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>
-            <span class="text" data-lang="zh">肉类新鲜度分类器</span>
-            <span class="text active" data-lang="en">Meat Freshness Classifier</span>
-        </h1>
+    <div class="lang-container">
         <div class="language-toggle">
             <button class="lang-btn" data-lang="zh">中</button>
             <button class="lang-btn active" data-lang="en">EN</button>
         </div>
+    </div>
+    
+    <div class="header">
+        <h1>
+            <span class="text" data-lang="zh">卤制牛肉新鲜度分类器</span>
+            <span class="text active" data-lang="en">Stewed Beef Freshness Classifier</span>
+        </h1>
     </div>
 
     <div class="upload-container">
@@ -246,7 +250,7 @@
     </div>
 
     {% if filename %}
-    <div class="result-container">
+    <div class="result-container" id="resultContainer">
         <h2>
             <span class="text" data-lang="zh">分类结果</span>
             <span class="text active" data-lang="en">Classification Result</span>
@@ -283,7 +287,7 @@
             </div>
         </div>
 
-        <img src="{{ url_for('static', filename='uploads/' + filename) }}" class="image-preview">
+        <img id="resultPreview" class="image-preview">
 
         <h3>
             <span class="text" data-lang="zh">Top-3 预测结果</span>
@@ -342,6 +346,20 @@
         window.addEventListener('DOMContentLoaded', function() {
             const savedLang = localStorage.getItem('preferredLanguage') || 'en';
             setLanguage(savedLang);
+            
+            // 如果有结果，显示本地预览的图片
+            {% if filename %}
+            const resultPreview = document.getElementById('resultPreview');
+            const savedImage = sessionStorage.getItem('uploadedImage');
+            
+            if (savedImage) {
+                // 使用本地保存的图片
+                resultPreview.src = savedImage;
+            }
+            
+            // 清除 sessionStorage，避免占用过多空间
+            sessionStorage.removeItem('uploadedImage');
+            {% endif %}
         });
 
         // 处理拍照功能
@@ -358,10 +376,21 @@
             fileInput.click();
         }
 
-        // 自动提交表单
+        // 自动提交表单前预览图片
         document.getElementById('fileInput').addEventListener('change', function() {
             if (this.files && this.files[0]) {
-                document.getElementById('uploadForm').submit();
+                const file = this.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // 保存图片到 sessionStorage
+                    sessionStorage.setItem('uploadedImage', e.target.result);
+                    
+                    // 提交表单
+                    document.getElementById('uploadForm').submit();
+                };
+                
+                reader.readAsDataURL(file);
             }
         });
 
